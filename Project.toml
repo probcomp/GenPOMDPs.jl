@@ -1,0 +1,10 @@
+name = "GenPOMDPs"
+uuid = "f88df91c-fa0e-46d7-b73d-4420684e5acb"
+authors = ["George Matheos <georgematheos@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Gen = "ea4f424c-a589-11e8-07c0-fd5c91b9da4a"
+GenParticleFilters = "56b76ac4-72ef-411e-b419-6d312ed86a6f"
+Observables = "510215fc-4207-5dde-b226-833fc4488ee2"
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
