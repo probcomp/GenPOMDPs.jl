@@ -7,7 +7,7 @@ using Gen
 # We use this to enable real-time and interactive visualizations.
 import Observables
 
-export GenPOMDP, ControlledTrajectoryModel
+export GenPOMDP
 
 struct GenPOMDP
     # Generative function accepting params and returning an initial state
@@ -33,12 +33,17 @@ include("gen_utils.jl")
 # Utilities for working with traces of the generative functions over trajectories
 # which are exposed in this module.
 include("trajectory_gf_utils.jl")
+export state_addr, obs_addr
+export observation_sequence, state_sequence, action_sequence
+export observation_retval_sequence
 
 # Generative functions over POMDP trajectories, given a fixed action sequence
 include("controlled_trajectory.jl")
+export ControlledTrajectoryModel
 
 # Utilities for constructing particle filters for the generative functions
 # over trajectories exposed in this module.    
 include("particle_filter.jl")
+export pf, bootstrap_pf, pf_observable
 
 end # module GenPOMDPs

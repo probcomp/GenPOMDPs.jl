@@ -153,6 +153,5 @@ function interactive_world_trace(trajectory_model, params)
         tr[] = newtr
     end
 
-
     return tr, onaction
 end

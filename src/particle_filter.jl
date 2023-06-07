@@ -65,44 +65,83 @@ function pf_observable(
     return pf_states
 end
 
-### Bootstrap PF ###
+### Particle Filter via GenParticleFilters ###
 
-function bootstrap_pf(pomdp, params, n_particles; updater_kwargs...)
+"""
+    pf(
+        pomdp::POMDP, pomdp_params,
+        pf_initialize_params::Tuple,
+        pf_update_params::Tuple;
+        pre_update = systematic_resample_if_ess_below_onefifth_particlecount,
+        post_update = (_ -> ())
+    )
+
+A particle filter for the given POMDP with the given pomdp_params, based on
+the GenParticleFilters.jl library.
+
+- pf_initialize_params controls the initialization of the particle filter:
+  The PF is initialized via the call
+  `GenParticleFilters.pf_initialize(model, args, observations, pf_initialize_params...)`.
+- pf_update_params controls the particle filter update: The PF is updated via the call
+  `GenParticleFilters.pf_update!(pf_state, new_args, new_observation, pf_update_params...)`.
+- pre_update and post_update are optional kwargs.  They are functions
+  that are called before and after each `pf_update!` call.
+  They are called with the particle filter state as the only argument.
+  They can be used, e.g., to include resampling and rejuvenation.
+
+Examples of how to set the PF parameters:
+- BOOTSTRAP Particle Filter:
+    `pf_initialize_params = (n_particles,)`,
+    `pf_update_params = ()`
+- PF with custom proposal:
+    `pf_initialize_params = (n_particles, initial_proposal, initial_proposal_args)`,
+    `pf_update_params = (step_proposal, step_proposal_args)`
+"""
+function pf(pomdp, pomdp_params, pf_initialize_params, pf_update_params,
+    pre_update = systematic_resample_if_ess_below_onefifth_particlecount,
+    post_update = (_ -> ())
+)
     return (
-        bootstrap_pf_initializer(pomdp, params, n_particles),
-        bootstrap_pf_updater(; updater_kwargs...)
+        pf_initializer(pomdp, pomdp_params, pf_initialize_params...),
+        pf_updater(pf_update_params...; pre_update, post_update)
     )
 end
 
-function bootstrap_pf_initializer(pomdp::GenPOMDP, params, n_particles;
-    controlled_trajectory_model = ControlledTrajectoryModel(pomdp)    
-)
+function bootstrap_pf(pomdp, params, n_particles)
+    return pf(pomdp, params, (n_particles,), ())
+end
+
+function pf_initializer(pomdp::GenPOMDP, pomdp_params, pf_initialize_params...)
+    controlled_trajectory_model = ControlledTrajectoryModel(pomdp)
+
     function initialize(obs0)
         # gf = ControlledTrajectoryModel(pomdp)
         # display(nest_choicemap(obs0, obs_addr(0)))
         pf_state = pf_initialize(
             controlled_trajectory_model,
-            (0, [], params),
+            (0, [], pomdp_params),
             nest_choicemap(obs0, obs_addr(0)),
-            n_particles
+            pf_initialize_params...
         )
         return pf_state
     end
 
     return initialize
 end
-
-function bootstrap_pf_updater(pre_update, post_update)
+function pf_updater(pf_update_params...;
+    pre_update = systematic_resample_if_ess_below_onefifth_particlecount,
+    post_update = (_ -> ())
+)
     function update(pf_state, newaction, newobs)
-        (T, oldactions, params) = get_args(pf_state.traces[1])
+        (T, oldactions, pomdp_params) = get_args(pf_state.traces[1])
         new_pf_state = copy(pf_state)
 
         pre_update(new_pf_state) # E.g. resample
-
+        
         actions = vcat(oldactions, [newaction])
         pf_update!(
             new_pf_state,
-            (T + 1, actions, params),
+            (T + 1, actions, pomdp_params),
             (Gen.IntDiff(1), # T has changed
                 
                 # HACK: say that the actions have not changed.
@@ -116,7 +155,9 @@ function bootstrap_pf_updater(pre_update, post_update)
                 # Parameters have not changed
                 NoChange()
             ),
-            nest_choicemap(newobs, obs_addr(T + 1))
+            nest_choicemap(newobs, obs_addr(T + 1)),
+
+            pf_update_params...
         )
         post_update(new_pf_state) # E.g. rejuvenate
 
@@ -125,18 +166,8 @@ function bootstrap_pf_updater(pre_update, post_update)
 
     return update
 end
-# A reasonable default: boostrap PF with stratified resampling
-# when the ESS is low.
-function bootstrap_pf_updater(; ess_threshold_fraction = 1/5)
-    function maybe_resample!(pf_state)
-        n_particles = length(get_traces(pf_state))
-        if get_ess(pf_state) < ess_threshold_fraction * n_particles
-            pf_resample!(pf_state, :stratified)
-        end
+function systematic_resample_if_ess_below_onefifth_particlecount(pf_state)
+    if get_ess(pf_state) < 0.2 * length(get_traces(pf_state))
+        pf_resample!(pf_state, :stratified)
     end
-
-    return bootstrap_pf_updater(
-        maybe_resample!, # Maybe resample before the bootstrap update
-        (_ -> ()) # Don't do anything after the bootstrap update
-    )
 end
