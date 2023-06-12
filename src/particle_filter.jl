@@ -1,4 +1,12 @@
 #=
+A few TODOs:
+1. Document the versions of `pf`, `pf_initializer`, `pf_updater` which accept functions
+    that construct the particle filter params.
+2. Think about if I want to remove or modify the old interface to `pf`, `pf_initializer`, and `pf_updater`,
+    since as it is setup, the multiple dispatch behavior could be confusing to users.
+=#
+
+#=
 Utilities for particle filtering in the generative functions
 over trajectories exposed in GenPOMDPs.
 
@@ -72,7 +80,7 @@ end
         pomdp::POMDP, pomdp_params,
         pf_initialize_params::Tuple,
         pf_update_params::Tuple;
-        pre_update = systematic_resample_if_ess_below_onefifth_particlecount,
+        pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
         post_update = (_ -> ())
     )
 
@@ -97,8 +105,8 @@ Examples of how to set the PF parameters:
     `pf_initialize_params = (n_particles, initial_proposal, initial_proposal_args)`,
     `pf_update_params = (step_proposal, step_proposal_args)`
 """
-function pf(pomdp, pomdp_params, pf_initialize_params, pf_update_params,
-    pre_update = systematic_resample_if_ess_below_onefifth_particlecount,
+function pf(pomdp, pomdp_params, pf_initialize_params, pf_update_params;
+    pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
     post_update = (_ -> ())
 )
     return (
@@ -106,30 +114,52 @@ function pf(pomdp, pomdp_params, pf_initialize_params, pf_update_params,
         pf_updater(pf_update_params...; pre_update, post_update)
     )
 end
+function pf(pomdp, pomdp_params, obs_to_pf_initialize_params::Function, act_obs_to_pf_update_params::Function;
+    pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
+    post_update = (_ -> ())
+)
+    return (
+        pf_initializer(pomdp, pomdp_params, obs_to_pf_initialize_params),
+        pf_updater(act_obs_to_pf_update_params; pre_update, post_update)
+    )
+end
 
 function bootstrap_pf(pomdp, params, n_particles)
     return pf(pomdp, params, (n_particles,), ())
 end
 
-function pf_initializer(pomdp::GenPOMDP, pomdp_params, pf_initialize_params...)
+function pf_initializer(pomdp::GenPOMDP, pomdp_params, obs_to_pf_params::Function)
     controlled_trajectory_model = ControlledTrajectoryModel(pomdp)
-
     function initialize(obs0)
-        # gf = ControlledTrajectoryModel(pomdp)
-        # display(nest_choicemap(obs0, obs_addr(0)))
         pf_state = pf_initialize(
             controlled_trajectory_model,
             (0, [], pomdp_params),
             nest_choicemap(obs0, obs_addr(0)),
-            pf_initialize_params...
+            obs_to_pf_params(obs0)...
         )
-        return pf_state
-    end
+        return pf_state    end
 
     return initialize
 end
-function pf_updater(pf_update_params...;
-    pre_update = systematic_resample_if_ess_below_onefifth_particlecount,
+pf_initializer(pomdp::GenPOMDP, pomdp_params, pf_initialize_params...) =
+    pf_initializer(pomdp, pomdp_params, (_ -> pf_initialize_params))
+
+# function pf_initializer(pomdp::GenPOMDP, pomdp_params, pf_initialize_params...)
+    # function initialize(obs0)
+    #     # gf = ControlledTrajectoryModel(pomdp)
+    #     # display(nest_choicemap(obs0, obs_addr(0)))
+    #     pf_state = pf_initialize(
+    #         controlled_trajectory_model,
+    #         (0, [], pomdp_params),
+    #         nest_choicemap(obs0, obs_addr(0)),
+    #         pf_initialize_params...
+    #     )
+    #     return pf_state
+    # end
+# end
+
+function pf_updater(act_obs_to_pf_update_params::Function;
+    pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
     post_update = (_ -> ())
 )
     function update(pf_state, newaction, newobs)
@@ -157,17 +187,61 @@ function pf_updater(pf_update_params...;
             ),
             nest_choicemap(newobs, obs_addr(T + 1)),
 
-            pf_update_params...
+            act_obs_to_pf_update_params(newaction, newobs)...
         )
         post_update(new_pf_state) # E.g. rejuvenate
 
         return new_pf_state
     end
-
+    
     return update
 end
-function systematic_resample_if_ess_below_onefifth_particlecount(pf_state)
+pf_updater(pf_update_params...; kwargs...) = pf_updater(((_, _) -> pf_update_params)...; kwargs...)
+# function pf_updater(pf_update_params...;
+#     pre_update = stratified_resample_if_ess_below_onefifth_particlecount,
+#     post_update = (_ -> ())
+# )
+#     function update(pf_state, newaction, newobs)
+#         (T, oldactions, pomdp_params) = get_args(pf_state.traces[1])
+#         new_pf_state = copy(pf_state)
+
+#         pre_update(new_pf_state) # E.g. resample
+        
+#         actions = vcat(oldactions, [newaction])
+#         pf_update!(
+#             new_pf_state,
+#             (T + 1, actions, pomdp_params),
+#             (Gen.IntDiff(1), # T has changed
+                
+#                 # HACK: say that the actions have not changed.
+#                 # (In this specific case, the correct update
+#                 # will occur if we tell Gen this.
+#                 # This will help performance.
+#                 # Eventually we need to add a better way for Gen
+#                 # to achieve this performance gain.)
+#                 NoChange(),
+
+#                 # Parameters have not changed
+#                 NoChange()
+#             ),
+#             nest_choicemap(newobs, obs_addr(T + 1)),
+
+#             pf_update_params...
+#         )
+#         post_update(new_pf_state) # E.g. rejuvenate
+
+#         return new_pf_state
+#     end
+
+#     return update
+# end
+function stratified_resample_if_ess_below_onefifth_particlecount(pf_state)
     if get_ess(pf_state) < 0.2 * length(get_traces(pf_state))
+        pf_resample!(pf_state, :stratified)
+    end
+end
+function stratified_resample_if_ess_below_one_plus_onetenth_particlecount(pf_state)
+    if get_ess(pf_state) < 1 + 0.1 * length(get_traces(pf_state))
         pf_resample!(pf_state, :stratified)
     end
 end
