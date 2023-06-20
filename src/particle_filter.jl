@@ -196,7 +196,7 @@ function pf_updater(act_obs_to_pf_update_params::Function;
     
     return update
 end
-pf_updater(pf_update_params...; kwargs...) = pf_updater(((_, _) -> pf_update_params)...; kwargs...)
+pf_updater(pf_update_params...; kwargs...) = pf_updater(((_, _) -> pf_update_params); kwargs...)
 # function pf_updater(pf_update_params...;
 #     pre_update = stratified_resample_if_ess_below_onefifth_particlecount,
 #     post_update = (_ -> ())
