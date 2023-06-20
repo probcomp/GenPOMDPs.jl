@@ -112,8 +112,12 @@ Example:
     println(1 + length(get_retval(tr[]))) # Prints: 4
 ```
 """
-function interactive_world_trace(trajectory_model, params)
-    tr = simulate(trajectory_model, (0, [], params))
+function interactive_world_trace(trajectory_model, params, constraints=nothing)
+    tr = if isnothing(constraints)
+        simulate(trajectory_model, (0, [], params))
+    else
+        generate(trajectory_model, (0, [], params), constraints)[1]
+    end
     tr = Observables.Observable(tr)
 
     function onaction(action)
