@@ -30,16 +30,25 @@ end
 # some of which should concievably be ported to Gen.jl eventually
 include("gen_utils.jl")
 
-# Utilities for working with traces of the generative functions over trajectories
-# which are exposed in this module.
-include("trajectory_gf_utils.jl")
-export state_addr, obs_addr
-export observation_sequence, state_sequence, action_sequence
-export observation_retval_sequence
-
 # Generative functions over POMDP trajectories, given a fixed action sequence
 include("controlled_trajectory.jl")
 export ControlledTrajectoryModel
+
+# POMDP controllers
+include("controller.jl")
+export Controller
+
+# Generative functions over POMDP trajectories, given a controller
+include("rollout_model.jl")
+export RolloutModel
+
+# Utilities for working with traces of the generative functions over trajectories
+# which are exposed in this module.
+include("trajectory_gf_utils.jl")
+export state_addr, obs_addr, control_addr
+export observation_sequence, state_sequence, action_sequence
+export observation_retval_sequence
+export control_sequence, controllerstate_sequence
 
 # Utilities for constructing particle filters for the generative functions
 # over trajectories exposed in this module.    

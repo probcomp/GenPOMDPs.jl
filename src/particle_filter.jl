@@ -197,44 +197,7 @@ function pf_updater(act_obs_to_pf_update_params::Function;
     return update
 end
 pf_updater(pf_update_params...; kwargs...) = pf_updater(((_, _) -> pf_update_params); kwargs...)
-# function pf_updater(pf_update_params...;
-#     pre_update = stratified_resample_if_ess_below_onefifth_particlecount,
-#     post_update = (_ -> ())
-# )
-#     function update(pf_state, newaction, newobs)
-#         (T, oldactions, pomdp_params) = get_args(pf_state.traces[1])
-#         new_pf_state = copy(pf_state)
 
-#         pre_update(new_pf_state) # E.g. resample
-        
-#         actions = vcat(oldactions, [newaction])
-#         pf_update!(
-#             new_pf_state,
-#             (T + 1, actions, pomdp_params),
-#             (Gen.IntDiff(1), # T has changed
-                
-#                 # HACK: say that the actions have not changed.
-#                 # (In this specific case, the correct update
-#                 # will occur if we tell Gen this.
-#                 # This will help performance.
-#                 # Eventually we need to add a better way for Gen
-#                 # to achieve this performance gain.)
-#                 NoChange(),
-
-#                 # Parameters have not changed
-#                 NoChange()
-#             ),
-#             nest_choicemap(newobs, obs_addr(T + 1)),
-
-#             pf_update_params...
-#         )
-#         post_update(new_pf_state) # E.g. rejuvenate
-
-#         return new_pf_state
-#     end
-
-#     return update
-# end
 function stratified_resample_if_ess_below_onefifth_particlecount(pf_state)
     if get_ess(pf_state) < 0.2 * length(get_traces(pf_state))
         pf_resample!(pf_state, :stratified)
