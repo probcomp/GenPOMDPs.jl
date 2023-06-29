@@ -106,7 +106,7 @@ Examples of how to set the PF parameters:
     `pf_update_params = (step_proposal, step_proposal_args)`
 """
 function pf(pomdp, pomdp_params, pf_initialize_params, pf_update_params;
-    pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
+    pre_update = (_ -> ()),
     post_update = (_ -> ())
 )
     return (
@@ -115,7 +115,7 @@ function pf(pomdp, pomdp_params, pf_initialize_params, pf_update_params;
     )
 end
 function pf(pomdp, pomdp_params, obs_to_pf_initialize_params::Function, act_obs_to_pf_update_params::Function;
-    pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
+    pre_update = (_ -> ()),
     post_update = (_ -> ())
 )
     return (
@@ -145,7 +145,7 @@ pf_initializer(pomdp::GenPOMDP, pomdp_params, pf_initialize_params...) =
     pf_initializer(pomdp, pomdp_params, (_ -> pf_initialize_params))
 
 function pf_updater(act_obs_to_pf_update_params::Function;
-    pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
+    pre_update = (_ -> ()),
     post_update = (_ -> ())
 )
     function update(pf_state, newaction, newobs)

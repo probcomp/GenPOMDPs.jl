@@ -1,4 +1,4 @@
 struct Controller
-    init_state :: Gen.GenerativeFunction
-    controller :: Gen.GenerativeFunction
+    controller :: Gen.GenerativeFunction # (controller state, obs) -> (action, next controller state)
+    init_state :: Any                    # Initial controller state
 end
