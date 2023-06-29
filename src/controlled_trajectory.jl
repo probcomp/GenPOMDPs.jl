@@ -70,16 +70,6 @@ function ControlledTrajectoryModel(p::GenPOMDP)
 
     return model
 end
-# function state_sequence(tr)
-#     state0 = get_retval(tr)[1][1]
-#     states_rest = [state for (state, obs) in get_retval(tr)[2]]
-#     return vcat([state0], states_rest)
-# end
-# function obs_sequence(tr)
-#     obs0 = get_retval(tr)[1][2]
-#     obss_rest = [obs for (state, obs) in get_retval(tr)[2]]
-#     return vcat([obs0], obss_rest)
-# end
 
 """
 Used for interactive simulation from a POMDP environment,
@@ -112,8 +102,12 @@ Example:
     println(1 + length(get_retval(tr[]))) # Prints: 4
 ```
 """
-function interactive_world_trace(trajectory_model, params)
-    tr = simulate(trajectory_model, (0, [], params))
+function interactive_world_trace(trajectory_model, params, constraints=nothing)
+    tr = if isnothing(constraints)
+        simulate(trajectory_model, (0, [], params))
+    else
+        generate(trajectory_model, (0, [], params), constraints)[1]
+    end
     tr = Observables.Observable(tr)
 
     function onaction(action)

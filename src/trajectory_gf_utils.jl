@@ -12,7 +12,17 @@ state_sequence(tr) = [tr[state_addr(t)] for t=0:get_args(tr)[1]]
 
 observation_retval_sequence(tr) = [tr[obs_addr(t)] for t=0:get_args(tr)[1]]
 
-# TODO: once we have other types of trajectory generative functions,
-# the actions may not be the argument -- so we will need to modify this
-# function to check the type of the generative function and do the right thing.
-action_sequence(tr) = get_args(tr)[2]
+function action_sequence(tr)
+    if length(get_args(tr)) == 2 # `tr` from ControlledTrajectoryModel
+        return get_args(tr)[2]
+    else # `tr` from RolloutModel
+        return map(x -> x[1], control_sequence(tr))
+    end
+end
+
+# For RolloutModels only:
+control_addr(t) = t == 0 ? (:init => :control) : (:steps => t => :control)
+control_choicemap_sequence(tr) = [get_submap(get_choices(tr), control_addr(t)) for t=0:get_args(tr)[1]]
+
+control_sequence(tr) = [tr[control_addr(t)] for t=0:get_args(tr)[1]]
+controllerstate_sequence(tr) = map(x -> x[2], control_sequence(tr))
