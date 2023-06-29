@@ -24,7 +24,5 @@ end
 control_addr(t) = t == 0 ? (:init => :control) : (:steps => t => :control)
 control_choicemap_sequence(tr) = [get_submap(get_choices(tr), control_addr(t)) for t=0:get_args(tr)[1]]
 
-
-# WRONG:
-# control_sequence(tr) = [get_retval(tr)[t][1] for t=0:get_args(tr)[1]]
-# controllerstate_sequence(tr) = [get_retval(tr)[t][2] for t=0:get_args(tr)[1]]
+control_sequence(tr) = [tr[control_addr(t)] for t=0:get_args(tr)[1]]
+controllerstate_sequence(tr) = map(x -> x[2], control_sequence(tr))
