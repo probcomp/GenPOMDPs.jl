@@ -70,16 +70,6 @@ function ControlledTrajectoryModel(p::GenPOMDP)
 
     return model
 end
-# function state_sequence(tr)
-#     state0 = get_retval(tr)[1][1]
-#     states_rest = [state for (state, obs) in get_retval(tr)[2]]
-#     return vcat([state0], states_rest)
-# end
-# function obs_sequence(tr)
-#     obs0 = get_retval(tr)[1][2]
-#     obss_rest = [obs for (state, obs) in get_retval(tr)[2]]
-#     return vcat([obs0], obss_rest)
-# end
 
 """
 Used for interactive simulation from a POMDP environment,

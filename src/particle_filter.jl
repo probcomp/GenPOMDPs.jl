@@ -144,20 +144,6 @@ end
 pf_initializer(pomdp::GenPOMDP, pomdp_params, pf_initialize_params...) =
     pf_initializer(pomdp, pomdp_params, (_ -> pf_initialize_params))
 
-# function pf_initializer(pomdp::GenPOMDP, pomdp_params, pf_initialize_params...)
-    # function initialize(obs0)
-    #     # gf = ControlledTrajectoryModel(pomdp)
-    #     # display(nest_choicemap(obs0, obs_addr(0)))
-    #     pf_state = pf_initialize(
-    #         controlled_trajectory_model,
-    #         (0, [], pomdp_params),
-    #         nest_choicemap(obs0, obs_addr(0)),
-    #         pf_initialize_params...
-    #     )
-    #     return pf_state
-    # end
-# end
-
 function pf_updater(act_obs_to_pf_update_params::Function;
     pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
     post_update = (_ -> ())
