@@ -13,7 +13,7 @@ state_sequence(tr) = [tr[state_addr(t)] for t=0:get_args(tr)[1]]
 observation_retval_sequence(tr) = [tr[obs_addr(t)] for t=0:get_args(tr)[1]]
 
 function action_sequence(tr)
-    if length(get_args(tr)) == 2 # `tr` from ControlledTrajectoryModel
+    if length(get_args(tr)) == 3 # `tr` from ControlledTrajectoryModel
         return get_args(tr)[2]
     else # `tr` from RolloutModel
         return map(x -> x[1], control_sequence(tr))
