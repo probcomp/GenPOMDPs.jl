@@ -66,7 +66,7 @@ function ControlledTrajectoryModel(p::GenPOMDP)
     # Use @suppress since there is currently a deprecation warning on Gen.load_generated_functions.
     # Before this deprecation goes through we will need to find some other way to get compilation
     # to work in this sort of context.
-    @suppress Gen.load_generated_functions()
+    # @suppress Gen.load_generated_functions()
 
     return model
 end
@@ -108,7 +108,13 @@ function interactive_world_trace(trajectory_model, params, constraints=nothing)
     else
         generate(trajectory_model, (0, [], params), constraints)[1]
     end
-    tr = Observables.Observable(tr)
+
+    return make_trace_interactive(tr)
+end
+
+function make_trace_interactive(trace)
+    t, actions, params = get_args(trace)
+    tr = Observables.Observable(trace)
 
     function onaction(action)
         past_T, past_actions = get_args(tr[])[1:2]

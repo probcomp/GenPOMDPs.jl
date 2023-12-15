@@ -37,7 +37,7 @@ function RolloutModel(p::GenPOMDP, π::Controller)
     # Use @suppress since there is currently a deprecation warning on Gen.load_generated_functions.
     # Before this deprecation goes through we will need to find some other way to get compilation
     # to work in this sort of context.
-    @suppress Gen.load_generated_functions()
+    # @suppress Gen.load_generated_functions()
 
     return model
 end

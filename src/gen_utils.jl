@@ -21,12 +21,12 @@ end
 
 # I have made this PR [https://github.com/probcomp/Gen.jl/pull/509/commits/ebeee8ee8da1bfdc022e9350e63997722b279922]
 # to Gen.jl to add this function:
-function Base.copy(state::Gen.ParticleFilterState{U}) where U
-    Gen.ParticleFilterState{U}(
-        copy(state.traces),
-        copy(state.new_traces),
-        copy(state.log_weights),
-        state.log_ml_est,
-        copy(state.parents)
-    )
-end
+# function Base.copy(state::Gen.ParticleFilterState{U}) where U
+#     Gen.ParticleFilterState{U}(
+#         copy(state.traces),
+#         copy(state.new_traces),
+#         copy(state.log_weights),
+#         state.log_ml_est,
+#         copy(state.parents)
+#     )
+# end
