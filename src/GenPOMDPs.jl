@@ -55,4 +55,7 @@ export control_sequence, controllerstate_sequence
 include("particle_filter.jl")
 export pf, bootstrap_pf, pf_observable
 
+include("utility.jl")
+export undiscounted_utility
+
 end # module GenPOMDPs

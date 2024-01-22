@@ -80,7 +80,7 @@ end
         pomdp::POMDP, pomdp_params,
         pf_initialize_params::Tuple,
         pf_update_params::Tuple;
-        pre_update = stratified_resample_if_ess_below_one_plus_onetenth_particlecount,
+        pre_update = (_ -> ()),
         post_update = (_ -> ())
     )
 
@@ -192,5 +192,56 @@ end
 function stratified_resample_if_ess_below_one_plus_onetenth_particlecount(pf_state)
     if get_ess(pf_state) < 1 + 0.1 * length(get_traces(pf_state))
         pf_resample!(pf_state, :stratified)
+    end
+end
+
+###
+
+# This is broken but I'm keeping it for backwards compatibility...
+function map_pf_over_gt_trace(pf, gt_trace; get_intermediates=true)
+    (initialize_pf, update_pf) = pf
+    obss = observation_sequence(gt_trace)
+    actions = action_sequence(gt_trace)
+
+    if get_intermediates
+        states = []
+    end
+    pf_state = initialize_pf(obss[1])
+
+    for (obs, action) in zip(obss[2:end], actions)
+        pf_state = update_pf(pf_state, action, obs)
+        if get_intermediates
+            push!(states, pf_state)
+        end
+    end
+
+    if get_intermediates
+        return states
+    else
+        return pf_state
+    end
+end
+
+function map_pf_over_gt_trace_fixed(pf, gt_trace; get_intermediates=true)
+    (initialize_pf, update_pf) = pf
+    obss = observation_sequence(gt_trace)
+    actions = action_sequence(gt_trace)
+
+    pf_state = initialize_pf(obss[1])
+    if get_intermediates
+        states = [pf_state]
+    end
+
+    for (obs, action) in zip(obss[2:end], actions)
+        pf_state = update_pf(pf_state, action, obs)
+        if get_intermediates
+            push!(states, pf_state)
+        end
+    end
+
+    if get_intermediates
+        return states
+    else
+        return pf_state
     end
 end

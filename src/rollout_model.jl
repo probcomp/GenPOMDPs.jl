@@ -4,7 +4,7 @@ function RolloutModel(p::GenPOMDP, π::Controller)
             state ~ ($p.init)(params)
             obs ~ ($p.obs)(state, params)
 
-            control ~ $π.controller($π.init_state, obs)
+            control ~ $π.controller($π.init_state, obs, params)
             
             return maketuple(state, obs, control)
         end
@@ -17,7 +17,7 @@ function RolloutModel(p::GenPOMDP, π::Controller)
             state ~ ($p.step)(prev_state, action, params)
             obs ~ ($p.obs)(state, params)
 
-            control ~ $π.controller(πstate, obs)
+            control ~ $π.controller(πstate, obs, params)
 
             return maketuple(state, obs, control)
         end

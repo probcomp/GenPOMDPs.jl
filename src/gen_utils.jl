@@ -11,6 +11,9 @@ function maketuple(args...)
 end
 
 ### Utilities for manipulating Gen addresses ###
+"""
+    nest_at(prefix, suffix)
+"""
 nest_at(prefix, suffix) = prefix => suffix
 nest_at(prefix::Pair, suffix) = prefix.first => nest_at(prefix.second, suffix)
 function nest_choicemap(to_nest, addr)
